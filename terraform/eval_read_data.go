@@ -305,5 +305,19 @@ func (n *evalReadDataRefresh) Eval(ctx EvalContext) (interface{}, error) {
 // immediately reading from the data source where possible, instead forcing us
 // to generate a plan.
 func (n *evalReadDataRefresh) forcePlanRead() bool {
+	switch {
+	case len(n.Config.DependsOn) > 0:
+		// this directly from the config itself
+		log.Printf("[TRACE] evalReadDataRefresh: %s has configured depends_on", n.Addr)
+	case len(n.dependsOn) > 0:
+		// These are the actual node addresses found through depends_on, either
+		// from the config or from a parent module
+		log.Printf("[TRACE] evalReadDataRrefresh: %s is in a module that depends on other resources", n.Addr)
+	case n.forceDependsOn:
+		// This is the case when a parent module has depends_on configured, but
+		// non of the resulting resources are in the refresh graph.
+		log.Printf("[TRACE] evalReadDataRefresh: %s is in a module that depends with configured depends_on", n.Addr)
+	}
+
 	return len(n.Config.DependsOn) > 0 || len(n.dependsOn) > 0 || n.forceDependsOn
 }
